@@ -1,10 +1,11 @@
 from django.contrib import admin
 from django.urls import path
 from monitoring import views
+from django.http import HttpResponse
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.auth_view, name='login'),
+    path('', lambda request: HttpResponse("Сайт работает 🚀"), name='home'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('management/', views.admin_dashboard_view, name='admin_dashboard'),
 
