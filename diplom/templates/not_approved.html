@@ -1,0 +1,132 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ожидание активации | ZONT Мониторинг</title>
+    <style>
+        /* --- ЦВЕТОВАЯ ПАЛИТРА ZONT --- */
+        :root {
+            --bg-main: #f2f5f9;
+            --bg-card: #ffffff;
+            --text-main: #1d1d1f;
+            --text-muted: #8e8e93;
+            --accent-blue: #007aff;
+            --accent-orange: #ff6b00;
+            --radius-lg: 28px;
+            --radius-sm: 12px;
+            --shadow-card: 0 20px 60px rgba(0,0,0,0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .status-container {
+            background-color: var(--bg-card);
+            width: 100%;
+            max-width: 440px;
+            padding: 50px 40px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.02);
+            animation: fadeInScale 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Пульсирующая иконка ожидания */
+        .icon-wrapper {
+            width: 80px;
+            height: 80px;
+            background: #fff5eb;
+            color: var(--accent-orange);
+            font-size: 34px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 30px auto;
+            box-shadow: 0 0 0 10px rgba(255, 107, 0, 0.05);
+            animation: pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+        }
+
+        .status-container h1 {
+            color: var(--text-main);
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            letter-spacing: -0.5px;
+        }
+
+        .status-container p {
+            color: var(--text-muted);
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .btn-secondary {
+            display: block;
+            width: 100%;
+            margin-top: 35px;
+            padding: 16px;
+            background: #f4f5f8;
+            color: var(--text-main);
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            font-weight: 700;
+            transition: 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e5ea;
+            transform: translateY(-1px);
+        }
+
+        /* Анимации */
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.2); transform: scale(1); }
+            50% { box-shadow: 0 0 0 15px rgba(255, 107, 0, 0); transform: scale(1.05); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0); transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="status-container">
+        <!-- Анимированная иконка (песочные часы) -->
+        <div class="icon-wrapper">
+            ⏳
+        </div>
+
+        <h1>Аккаунт на проверке</h1>
+
+        <p>Данные вашего оборудования успешно сохранены и переданы в систему.</p>
+        <p>Пожалуйста, ожидайте. Инженер проверяет совпадение серийного номера для активации вашего доступа к платформе.</p>
+
+        <a href="/" class="btn-secondary">Вернуться на главную</a>
+    </div>
+
+</body>
+</html>

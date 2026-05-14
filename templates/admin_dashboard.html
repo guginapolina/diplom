@@ -1,0 +1,970 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Панель диспетчера ZONT | Управление</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-main: #f2f5f9;
+            --bg-card: #ffffff;
+            --sidebar-bg: #1c1c1e;
+            --sidebar-hover: #2c2c2e;
+            --text-main: #1d1d1f;
+            --text-muted: #8e8e93;
+            --accent-blue: #007aff;
+            --accent-orange: #ff6b00;
+            --danger-red: #ff3b30;
+            --success-green: #34c759;
+            --warning-yellow: #ffcc00;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 10px;
+            --shadow-card: 0 8px 30px rgba(0,0,0,0.04);
+            --shadow-modal: 0 20px 50px rgba(0,0,0,0.15);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { background: var(--bg-main); color: var(--text-main); display: flex; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+        .sidebar { width: 260px; background: var(--sidebar-bg); color: white; padding: 25px 20px; box-shadow: 4px 0 20px rgba(0,0,0,0.05); z-index: 10; }
+        .sidebar h2 { font-size: 20px; margin-bottom: 35px; color: var(--bg-card); font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .sidebar h2::before { content: ''; display: block; width: 12px; height: 12px; background: var(--accent-orange); border-radius: 50%; }
+
+        .sidebar nav a { display: block; color: #a1a1a6; text-decoration: none; padding: 14px 18px; margin-bottom: 8px; border-radius: var(--radius-sm); font-size: 15px; font-weight: 500; transition: 0.2s ease; }
+        .sidebar nav a:hover { background: var(--sidebar-hover); color: white; transform: translateX(4px); }
+
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        .header h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+        .header-user-panel { display: flex; align-items: center; gap: 30px; }
+
+        .notification-wrapper { position: relative; cursor: pointer; }
+        .notification-bell { font-size: 24px; position: relative; display: inline-flex; justify-content: center; align-items: center; width: 45px; height: 45px; background: white; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.2s; }
+        .notification-bell:hover { transform: scale(1.05); }
+        .notification-badge { position: absolute; top: -2px; right: -2px; background: var(--danger-red); color: white; font-size: 11px; font-weight: 800; padding: 3px 6px; border-radius: 20px; border: 2px solid white; box-shadow: 0 2px 5px rgba(255,59,48,0.3);}
+
+        .notification-dropdown { display: none; position: absolute; right: -10px; top: 55px; width: 340px; background: var(--bg-card); border-radius: var(--radius-md); box-shadow: var(--shadow-modal); z-index: 1000; overflow: hidden; border: 1px solid rgba(0,0,0,0.05); }
+        .notification-dropdown h4 { background: var(--bg-main); color: var(--text-main); padding: 15px 20px; font-size: 14px; margin: 0; font-weight: 600; border-bottom: 1px solid #ebebeb; }
+        .notif-item { padding: 15px 20px; border-bottom: 1px solid #ebebeb; transition: 0.2s; }
+        .notif-item:hover { background: #f9fafb; }
+        .notif-item p { margin: 5px 0; color: var(--text-main); font-weight: 600; font-size: 14px;}
+        .notif-item small { color: var(--text-muted); font-size: 12px; }
+        .notif-view-all { display: block; text-align: center; padding: 15px; background: var(--bg-main); color: var(--accent-blue); text-decoration: none; font-size: 14px; font-weight: 600; }
+
+        @keyframes ring { 0% { transform: rotate(0); } 10% { transform: rotate(15deg); } 20% { transform: rotate(-15deg); } 30% { transform: rotate(10deg); } 40% { transform: rotate(-10deg); } 50% { transform: rotate(0); } }
+        .ringing { animation: ring 2s 3; transform-origin: top center; }
+
+        .alert { padding: 18px 20px; margin-bottom: 25px; border-radius: var(--radius-md); font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);}
+        .alert-success { background-color: #e5f9eb; color: #1e873d; }
+        .alert-error { background-color: #ffe8e6; color: #d62419; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .stat-card { background: var(--bg-card); padding: 25px; border-radius: var(--radius-md); box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 10px; transition: 0.3s; border: 1px solid rgba(0,0,0,0.02);}
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 12px 40px rgba(0,0,0,0.06); }
+        .stat-card h3 { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+        .stat-card p { font-size: 32px; font-weight: 800; color: var(--text-main); line-height: 1; }
+
+        .section-card { background: var(--bg-card); padding: 35px; border-radius: var(--radius-lg); box-shadow: var(--shadow-card); margin-bottom: 40px; border: 1px solid rgba(0,0,0,0.02); }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .section-card h2 { font-size: 20px; color: var(--text-main); font-weight: 700; }
+
+        .search-input, .form-group input, .form-group select, .add-device-form input, .add-device-form select {
+            padding: 14px 18px; border: 2px solid transparent; border-radius: var(--radius-sm); font-size: 15px; background: #f4f5f8; outline: none; font-weight: 500; color: var(--text-main); transition: 0.2s;
+        }
+        .search-input:focus, .form-group input:focus, .form-group select:focus, .add-device-form input:focus {
+            background: white; border-color: var(--accent-blue); box-shadow: 0 0 0 4px rgba(0,122,255,0.1);
+        }
+
+        .add-device-form { display: flex; gap: 15px; margin-bottom: 25px; background: #fafbfc; padding: 20px; border-radius: var(--radius-md); border: 1px dashed #d1d1d6;}
+        .add-device-form input, .add-device-form select { flex: 1; }
+
+        .btn-add { background: var(--accent-blue); color: white; border: none; padding: 14px 20px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; font-size: 15px; transition: 0.2s; box-shadow: 0 4px 15px rgba(0,122,255,0.2);}
+        .btn-add:hover { background: #0062cc; transform: translateY(-1px); }
+
+        table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        th { text-align: left; background: transparent; padding: 15px; color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #f0f0f0; }
+        td { padding: 18px 15px; border-bottom: 1px solid #f4f5f8; font-size: 15px; color: var(--text-main); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #fcfcfd; }
+
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; display: inline-block; letter-spacing: 0.3px;}
+        .badge-warning { background: #fff5cc; color: #b28f00; }
+        .badge-success { background: #e5f9eb; color: #1e873d; }
+        .badge-danger { background: #ffe8e6; color: #d62419; }
+        .badge-secondary { background: #f2f2f7; color: #8e8e93; }
+
+        .action-buttons { display: flex; gap: 8px; align-items: center;}
+
+        .btn-approve { background: var(--success-green); color: white; border: none; padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.2s;}
+        .btn-delete { background: var(--danger-red); color: white; border: none; padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.2s;}
+        .btn-history { background: #f4f5f8; color: var(--text-main); padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-block; border: none; transition: 0.2s;}
+        .btn-history:hover { background: #e5e5ea; }
+        .btn-approve:hover, .btn-delete:hover { filter: brightness(0.9); transform: translateY(-1px); }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: var(--bg-card); padding: 40px; border-radius: var(--radius-lg); width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-modal); animation: fadeInScale 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid rgba(255,255,255,0.2); }
+
+        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes pulseDot { 0% { box-shadow: 0 0 0 0 rgba(52,199,89,0.4); } 70% { box-shadow: 0 0 0 10px rgba(52,199,89,0); } 100% { box-shadow: 0 0 0 0 rgba(52,199,89,0); } }
+
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .modal-header h3 { margin: 0; color: var(--text-main); font-size: 22px; font-weight: 700;}
+        .close-btn { background: #f4f5f8; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
+        .close-btn:hover { background: #e5e5ea; color: var(--text-main); }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;}
+        .time-row { display: flex; gap: 15px; }
+        .time-row .form-group { flex: 1; }
+
+        .btn-submit-modal { width: 100%; background: var(--success-green); color: white; border: none; padding: 16px; border-radius: var(--radius-sm); font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: 0.2s; box-shadow: 0 4px 15px rgba(52, 199, 89, 0.2);}
+        .btn-submit-modal:hover { background: #2ebd4f; transform: translateY(-1px);}
+
+        .btn-phone-resolve { width: 100%; background: var(--warning-yellow); color: #6b4d00; border: none; padding: 16px; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 12px; transition: 0.2s; box-shadow: 0 4px 15px rgba(255, 204, 0, 0.2);}
+        .btn-phone-resolve:hover { filter: brightness(0.95); transform: translateY(-1px);}
+
+        .btn-master-resolve { width: 100%; background: var(--success-green); color: white; border: none; padding: 16px; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 12px; transition: 0.2s; box-shadow: 0 4px 15px rgba(52, 199, 89, 0.2);}
+        .btn-master-resolve:hover { background: #2ebd4f; transform: translateY(-1px);}
+
+        .btn-master-call { width: 100%; background: var(--accent-blue); color: white; border: none; padding: 16px; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(0, 122, 255, 0.2);}
+        .btn-master-call:hover { background: #0062cc; transform: translateY(-1px);}
+
+        .slots-container { display: flex; flex-wrap: wrap; gap: 10px; }
+        .date-group h4 { margin: 25px 0 12px; color: var(--text-main); border-bottom: 2px solid #f4f5f8; padding-bottom: 8px; font-size: 15px; font-weight: 700;}
+
+        .slot-free, .slot-booked { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; transition: 0.2s; }
+        .slot-free { background: #e5f9eb; color: #1e873d; border: 1px solid rgba(52,199,89,0.2); }
+        .slot-booked { background: #ffe8e6; color: #d62419; border: 1px solid rgba(255,59,48,0.2); text-decoration: line-through;}
+
+        .btn-delete-slot { background: white; border: none; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; justify-content: center; align-items: center; color: inherit; font-size: 14px; cursor: pointer; font-weight: bold; opacity: 0.8; transition: 0.2s;}
+        .btn-delete-slot:hover { opacity: 1; transform: scale(1.1); color: var(--danger-red); }
+
+        .ticket-details { background: #fcfcfd; padding: 20px; border-radius: var(--radius-md); border-left: 4px solid var(--danger-red); margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);}
+        .ticket-details h5 { color: var(--danger-red); font-size: 18px; margin-bottom: 8px; font-weight: 700;}
+        .ticket-details p { font-size: 14px; color: var(--text-main); line-height: 1.5; white-space: pre-wrap;}
+
+        .client-info-card { background: white; padding: 15px; border-radius: var(--radius-sm); border: 1px solid #ebebeb; margin-top: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .client-info-row { display: flex; align-items: center; margin-bottom: 8px; }
+        .client-info-row:last-child { margin-bottom: 0; }
+        .client-info-label { width: 110px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .client-info-value { font-size: 14px; font-weight: 600; color: var(--text-main); }
+
+        .timer-badge { margin-top: 10px; font-size: 11px; color: #d62419; font-weight: 700; background: #ffe8e6; padding: 5px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(255,59,48,0.2);}
+        code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; font-weight: 700; }
+
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>ZONT Управление</h2>
+        <nav>
+            <a href="#analytics" style="color: var(--accent-blue);">📊 Аналитика системы</a>
+            <a href="#telemetry-logs" style="color: #34c759;">🟢 Live-Телеметрия</a>
+            <a href="#warehouse">Склад (Устройства)</a>
+            <a href="#specialists">Специалисты (Выезд)</a>
+            <a href="#all-users">База клиентов</a>
+            <a href="#manual-tickets">Журнал заявок</a>
+            <a href="#auto-tickets" style="color: var(--accent-orange);">Авто-Тревоги</a>
+            <a href="{% url 'logout' %}" style="margin-top: 50px; color: #ff3b30; font-weight: bold; background: rgba(255,59,48,0.1);">Выйти из системы</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <h1>Рабочее место диспетчера</h1>
+                <button onclick="triggerTelemetry()" style="background: #e6f2ff; color: var(--accent-blue); border: none; padding: 8px 15px; border-radius: 20px; font-weight: 700; cursor: pointer; transition: 0.2s;">📡 Опросить датчики</button>
+            </div>
+            <div class="header-user-panel">
+                <div class="notification-wrapper" id="notifWrapper" onclick="toggleNotifications(event)">
+                    <div class="notification-bell {% if active_tickets > 0 %}ringing{% endif %}">
+                        🔔
+                        {% if active_tickets > 0 %}<span class="notification-badge">{{ active_tickets }}</span>{% endif %}
+                    </div>
+                    <div class="notification-dropdown" id="notifDropdown">
+                        <h4>Активные инциденты ({{ active_tickets }})</h4>
+                        {% if active_tickets > 0 %}
+                            {% for ticket in all_tickets %}
+                                {% if ticket.status == 'new' %}
+                                <div class="notif-item">
+                                    <strong>{{ ticket.user.username }} (ID: {{ ticket.id }})</strong>
+                                    <p>{{ ticket.title }}</p>
+                                    <small>Время: {{ ticket.created_at|date:"d.m.Y H:i" }}</small>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                            <a href="#manual-tickets" class="notif-view-all">Спуститься к журналу ↓</a>
+                        {% else %}
+                            <p style="padding: 25px; color: var(--text-muted); text-align: center; font-size: 14px;">Все проблемы решены. Отличная работа! 🥳</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div style="font-weight: 500; font-size: 16px;">Привет, <strong style="color: var(--accent-orange);">Администратор</strong></div>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="section-card" id="analytics" style="background: #fdfdfd;">
+            <div class="section-header"><h2>📊 Аналитика системы</h2></div>
+            
+            <div class="stats-grid" id="dynamicStatsGrid">
+                <div class="stat-card">
+                    <h3>Заявки от клиентов (Новые)</h3>
+                    <p style="color: var(--danger-red);">{{ manual_tickets_new }}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Авто-Тревоги (Новые)</h3>
+                    <p style="color: var(--accent-orange);">{{ auto_tickets_new }}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>В работе инженеров</h3>
+                    <p style="color: var(--warning-yellow);">{{ tickets_in_progress }}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Полностью решено</h3>
+                    <p style="color: var(--success-green);">{{ tickets_resolved }}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Всего клиентов</h3>
+                    <p style="color: var(--accent-blue);">{{ total_users }}</p>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                <div style="flex: 2; background: white; padding: 25px; border-radius: var(--radius-md); border: 1px solid #ebebeb;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="font-size: 16px; margin: 0; color: var(--text-muted);">Тренды инцидентов (за 7 дней)</h3>
+                    </div>
+                    <div style="position: relative; height: 300px; width: 100%;">
+                        <canvas id="timeChart"></canvas>
+                    </div>
+                </div>
+                <div style="flex: 1; background: white; padding: 25px; border-radius: var(--radius-md); border: 1px solid #ebebeb;">
+                    <h3 style="font-size: 16px; margin-bottom: 20px; color: var(--text-muted);">Статусы (Всего)</h3>
+                    <div style="position: relative; height: 300px; width: 100%;">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-card" id="telemetry-logs" style="background: #1c1c1e; border: none; padding: 25px;">
+            <div class="section-header" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 15px;">
+                <h2 style="color: #ffffff; font-size: 16px; margin: 0; display: flex; align-items: center; gap: 10px;">
+                    <span style="display: inline-block; width: 10px; height: 10px; background: var(--success-green); border-radius: 50%; box-shadow: 0 0 8px var(--success-green); animation: pulseDot 2s infinite;"></span>
+                    Терминал сервера (IoT Телеметрия)
+                </h2>
+                <button onclick="document.getElementById('logConsole').innerHTML=''" style="background: transparent; border: 1px solid #444; color: #888; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 12px; transition: 0.2s;">Очистить</button>
+            </div>
+            <div id="logConsole" style="height: 180px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.6; color: #a1a1a6; padding-right: 10px;">
+                <div style="color: #555;">[СИСТЕМА] Ожидание связи с оборудованием... (Авто-опрос каждые 10 секунд)</div>
+            </div>
+        </div>
+
+        <div class="section-card" id="warehouse">
+            <div class="section-header"><h2>Склад <span style="font-size: 14px; font-weight: 500; color: var(--text-muted); margin-left: 10px;">(База устройств)</span></h2></div>
+            <form method="POST" class="add-device-form">
+                {% csrf_token %}
+                <input type="hidden" name="create_device" value="1">
+                <input type="hidden" name="new_model" value="ZONT H-1V">
+                <input type="text" name="new_sn" placeholder="Серийный номер (S/N)" required>
+                <input type="text" value="ZONT H-1V (Термостат)" readonly style="background: #e5e5ea; cursor: not-allowed; color: var(--text-muted);" title="Для добавления доступна только эта модель">
+                <button type="submit" class="btn-add">Добавить на склад</button>
+            </form>
+            <table>
+                <thead><tr><th>Серийный номер </th><th>Модель</th></tr></thead>
+                 <tbody>
+                    {% for device in all_devices %}
+                    <tr><td><code style="color: var(--accent-orange); font-size: 14px;">{{ device.serial_number }}</code></td><td style="font-weight: 500;">{{ device.model_name }}</td></tr>
+                    {% empty %}
+                    <tr><td colspan="2" style="color: var(--text-muted); text-align: center; padding: 30px;">База склада пуста.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section-card" id="specialists">
+            <div class="section-header"><h2>Инженеры <span style="font-size: 14px; font-weight: 500; color: var(--text-muted); margin-left: 10px;">(Специалисты выезда)</span></h2></div>
+            <form method="POST" class="add-device-form">
+                {% csrf_token %}
+                <input type="hidden" name="add_specialist" value="1">
+                <input type="text" name="fio" placeholder="ФИО инженера" required>
+                <input type="tel" id="specialist-phone" name="phone" placeholder="+7 (___) ___-__-__" required>
+                <button type="submit" class="btn-add">Добавить сотрудника</button>
+            </form>
+            <table style="margin-top: 20px;">
+                <thead><tr><th>Сотрудник</th><th>Телефон</th><th>График</th><th>Действия</th></tr></thead>
+                <tbody>
+                    {% for sp in all_specialists %}
+                    <tr>
+                        <td><strong>{{ sp.fio }}</strong><br><span class="badge badge-secondary" style="margin-top: 8px;">Слотов: {{ sp.slots.count }}</span></td>
+                        <td style="font-weight: 500;">{{ sp.phone }}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button onclick="openScheduleModal('{{ sp.id }}', '{{ sp.fio }}')" class="btn-history" style="background: #e8dbf9; color: #6b21a8;">+ Смена</button>
+                                <button onclick="openViewModal('{{ sp.id }}', '{{ sp.fio }}')" class="btn-history" style="background: #fff5cc; color: #b28f00;">👁 График</button>
+                            </div>
+                            <div id="schedule-data-{{ sp.id }}" style="display: none;">
+                                {% regroup sp.slots.all|dictsort:"date" by date as date_list %}
+                                {% if date_list %}
+                                    {% for date_group in date_list %}
+                                        <div class="date-group">
+                                            <h4>📅 {{ date_group.grouper|date:"d M Y" }}</h4>
+                                            <div class="slots-container">
+                                                {% for slot in date_group.list|dictsort:"time" %}
+                                                    {% if slot.is_booked %}
+                                                        <div class="slot-booked">
+                                                            <span>🕒 {{ slot.time|time:"H:i" }} (Занято)</span>
+                                                            <form method="POST" style="margin: 0;" onsubmit="return confirm('Этот слот уже ЗАНЯТ! Отменить выезд?');">
+                                                                {% csrf_token %}
+                                                                <input type="hidden" name="delete_slot" value="1"><input type="hidden" name="slot_id" value="{{ slot.id }}">
+                                                                <button type="submit" class="btn-delete-slot">&times;</button>
+                                                            </form>
+                                                        </div>
+                                                    {% else %}
+                                                        <div class="slot-free">
+                                                            <span>🕒 {{ slot.time|time:"H:i" }}</span>
+                                                            <form method="POST" style="margin: 0;" onsubmit="return confirm('Удалить свободный слот?');">
+                                                                {% csrf_token %}
+                                                                <input type="hidden" name="delete_slot" value="1"><input type="hidden" name="slot_id" value="{{ slot.id }}">
+                                                                <button type="submit" class="btn-delete-slot">&times;</button>
+                                                            </form>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p style="color: var(--text-muted); text-align: center; margin-top: 30px;">Свободных слотов нет.</p>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <form method="POST" onsubmit="return confirm('Удалить сотрудника {{ sp.fio }}?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="delete_specialist" value="1">
+                                <input type="hidden" name="specialist_id" value="{{ sp.id }}">
+                                <button type="submit" class="btn-delete">Удалить</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="color: var(--text-muted); text-align: center; padding: 30px;">Штат инженеров пуст.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section-card" id="all-users">
+            <div class="section-header">
+                <h2>База клиентов</h2>
+                <input type="text" id="searchInput" class="search-input" placeholder="Поиск (ФИО, S/N, телефон)..." onkeyup="filterTable()">
+            </div>
+            <table id="usersTable">
+                <thead><tr><th>Пользователь</th><th>Связь</th><th>Устройства</th><th>Серийные номера (S/N)</th><th>Управление</th></tr></thead>
+                <tbody>
+                    {% for profile in all_profiles %}
+
+                    <tr {% if not profile.user.is_active %}style="opacity: 0.5; filter: grayscale(100%); background: #f9fafb;"{% endif %}>
+                        <td>
+                            <strong>{{ profile.fio }}</strong>
+                            {% if not profile.user.is_active %}
+                                <span class="badge" style="background: #e5e5ea; color: #8e8e93; font-size: 10px; margin-left: 5px;">В архиве</span>
+                            {% endif %}
+                            <br><small style="color: var(--text-muted);">{{ profile.user.username }}</small>
+                        </td>
+                        <td style="font-weight: 500;">{{ profile.phone }}</td>
+
+                        <td>
+                            <span class="badge badge-secondary">{{ profile.get_device_type_display }}</span>{% for dev in profile.user.additional_devices.all %}, <span class="badge badge-secondary">{{ dev.get_device_type_display }}</span>{% endfor %}
+                        </td>
+
+                        <td>
+                            <code style="color: var(--accent-orange);">{{ profile.serial_number }}</code>{% for dev in profile.user.additional_devices.all %}, <code style="color: var(--accent-orange);">{{ dev.serial_number }}</code>{% endfor %}
+                        </td>
+
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'user_history' profile.user.id %}" class="btn-history" style="background: #e6f2ff; color: var(--accent-blue);">История</a>
+
+                                {% if profile.user.is_active %}
+                                <form method="POST" onsubmit="return confirm('Перенести клиента {{ profile.fio }} в архив?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="archive_id" value="{{ profile.user.id }}">
+                                    <button type="submit" class="btn-delete" style="background: #ffcc00; color: #6b4d00; box-shadow: none;">В архив</button>
+                                </form>
+                                {% else %}
+                                <form method="POST" onsubmit="return confirm('Восстановить клиента {{ profile.fio }} из архива?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="restore_id" value="{{ profile.user.id }}">
+                                    <button type="submit" class="btn-approve" style="background: var(--success-green); box-shadow: none;">Восстановить</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section-card" id="manual-tickets">
+            <div class="section-header" style="flex-wrap: wrap; gap: 15px;">
+                <h2>Журнал инцидентов <span style="font-size: 14px; font-weight: 500; color: var(--text-muted); margin-left: 10px;">(Заявки от клиентов)</span></h2>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <input type="text" id="searchManual" class="search-input" placeholder="Поиск (логин, проблема)..." onkeyup="filterGenericTickets('tableManual', 'searchManual', 'filterManual')" style="width: 260px; padding: 10px 15px;">
+                    <select id="filterManual" class="search-input" onchange="filterGenericTickets('tableManual', 'searchManual', 'filterManual')" style="width: 170px; padding: 10px 15px;">
+                        <option value="all">Все статусы</option>
+                        <option value="new">Критическая</option>
+                        <option value="in_progress">В работе</option>
+                        <option value="resolved">Закрыто</option>
+                    </select>
+                </div>
+            </div>
+
+            <table id="tableManual">
+                <thead>
+                    <tr><th>ID</th><th>Логин</th><th>Проблема / Выезд</th><th>Статус</th><th>Время</th><th>Действие</th></tr>
+                </thead>
+                <tbody id="tableManualBody">
+                    {% for ticket in manual_tickets %}
+                    <tr data-status="{{ ticket.status }}">
+                        <td style="color: var(--text-muted); font-weight: 600;">#{{ ticket.id }}</td>
+                        <td style="font-weight: 500;">{{ ticket.user.username }}</td>
+                        <td>
+                            <strong style="font-size: 15px;">{{ ticket.title }}</strong>
+                            {% if ticket.appointment and ticket.status != 'resolved' %}
+                                <br><span class="badge badge-secondary" style="margin-top: 8px; background: #f4ecfb; color: #6b21a8; border: 1px solid rgba(107,33,168,0.2);">
+                                    Выезд: {{ ticket.appointment.specialist.fio }} ({{ ticket.appointment.date|date:"d.m" }} в {{ ticket.appointment.time|time:"H:i" }})
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if ticket.status == 'new' %}
+                                <span class="badge badge-danger">Критическая</span>
+                            {% elif ticket.status == 'in_progress' %}
+                                <span class="badge badge-warning">В работе</span>
+                            {% else %}
+                                <span class="badge badge-success">Решено</span>
+                            {% endif %}
+                        </td>
+                        <td style="color: var(--text-muted); font-size: 14px;">{{ ticket.created_at|date:"d.m.Y H:i" }}</td>
+                        <td>
+                            {% if ticket.status == 'resolved' %}
+                                <span class="badge badge-secondary">Закрыто</span>
+                            {% else %}
+                                <button class="btn-add" style="padding: 8px 16px; border-radius: 20px; font-size: 13px;"
+                                    data-id="{{ ticket.id }}"
+                                    data-client="{{ ticket.user.username }}"
+                                    data-fio="{{ ticket.user.profile.fio }}"
+                                    data-phone="{{ ticket.user.profile.phone }}"
+                                    data-device="{{ ticket.user.profile.get_device_type_display }}{% for dev in ticket.user.additional_devices.all %}, {{ dev.get_device_type_display }}{% endfor %}"
+                                    data-sn="{{ ticket.user.profile.serial_number }}{% for dev in ticket.user.additional_devices.all %}, {{ dev.serial_number }}{% endfor %}"
+                                    data-title="{{ ticket.title }}"
+                                    data-desc="{{ ticket.description }}"
+                                    data-status="{{ ticket.status }}"
+                                    data-has-appt="{% if ticket.appointment %}yes{% else %}no{% endif %}"
+                                    onclick="openTicketActionModal(this)">
+                                    Открыть
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">Нет заявок от клиентов.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section-card" id="auto-tickets">
+            <div class="section-header" style="flex-wrap: wrap; gap: 15px;">
+                <h2>Автоматические тревоги <span style="font-size: 14px; font-weight: 500; color: var(--accent-orange); margin-left: 10px;">(Оповещения Телеметрии)</span></h2>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <input type="text" id="searchAuto" class="search-input" placeholder="Поиск по тревогам..." onkeyup="filterGenericTickets('tableAuto', 'searchAuto', 'filterAuto')" style="width: 260px; padding: 10px 15px;">
+                    <select id="filterAuto" class="search-input" onchange="filterGenericTickets('tableAuto', 'searchAuto', 'filterAuto')" style="width: 170px; padding: 10px 15px;">
+                        <option value="all">Все статусы</option>
+                        <option value="new">Критическая</option>
+                        <option value="in_progress">В работе</option>
+                        <option value="resolved">Закрыто</option>
+                    </select>
+                </div>
+            </div>
+
+            <table id="tableAuto">
+                <thead>
+                    <tr><th>ID</th><th>Логин</th><th>Источник тревоги / Выезд</th><th>Статус</th><th>Время</th><th>Действие</th></tr>
+                </thead>
+                <tbody id="tableAutoBody">
+                    {% for ticket in auto_tickets %}
+                    <tr data-status="{{ ticket.status }}">
+                        <td style="color: var(--text-muted); font-weight: 600;">#{{ ticket.id }}</td>
+                        <td style="font-weight: 500;">{{ ticket.user.username }}</td>
+                        <td>
+                            <strong style="font-size: 15px; color: var(--danger-red);">{{ ticket.title }}</strong>
+                            {% if ticket.appointment and ticket.status != 'resolved' %}
+                                <br><span class="badge badge-secondary" style="margin-top: 8px; background: #f4ecfb; color: #6b21a8; border: 1px solid rgba(107,33,168,0.2);">
+                                    Выезд: {{ ticket.appointment.specialist.fio }} ({{ ticket.appointment.date|date:"d.m" }} в {{ ticket.appointment.time|time:"H:i" }})
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if ticket.status == 'new' %}
+                                <span class="badge badge-danger">Тревога</span>
+                            {% elif ticket.status == 'in_progress' %}
+                                <span class="badge badge-warning">В работе</span>
+                            {% else %}
+                                <span class="badge badge-success">Решено</span>
+                            {% endif %}
+                        </td>
+                        <td style="color: var(--text-muted); font-size: 14px;">{{ ticket.created_at|date:"d.m.Y H:i" }}</td>
+                        <td>
+                            {% if ticket.status == 'resolved' %}
+                                <span class="badge badge-secondary">Закрыто</span>
+                            {% else %}
+                                <button class="btn-add" style="padding: 8px 16px; border-radius: 20px; font-size: 13px;"
+                                    data-id="{{ ticket.id }}"
+                                    data-client="{{ ticket.user.username }}"
+                                    data-fio="{{ ticket.user.profile.fio }}"
+                                    data-phone="{{ ticket.user.profile.phone }}"
+                                    data-device="{{ ticket.user.profile.get_device_type_display }}{% for dev in ticket.user.additional_devices.all %}, {{ dev.get_device_type_display }}{% endfor %}"
+                                    data-sn="{{ ticket.user.profile.serial_number }}{% for dev in ticket.user.additional_devices.all %}, {{ dev.serial_number }}{% endfor %}"
+                                    data-title="{{ ticket.title }}"
+                                    data-desc="{{ ticket.description }}"
+                                    data-status="{{ ticket.status }}"
+                                    data-has-appt="{% if ticket.appointment %}yes{% else %}no{% endif %}"
+                                    onclick="openTicketActionModal(this)">
+                                    Открыть
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">Системных тревог нет. Всё работает исправно!</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="scheduleModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalSpecialistName">Назначить график</h3>
+                <button class="close-btn" onclick="closeModal('scheduleModal')">&times;</button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="add_schedule" value="1">
+                <input type="hidden" name="specialist_id" id="modalSpecialistId" value="">
+                <div class="form-group"><label>Дата смены</label><input type="date" name="date" required></div>
+                <div class="time-row">
+                    <div class="form-group"><label>Начало</label><input type="time" name="start_time" required></div>
+                    <div class="form-group"><label>Окончание</label><input type="time" name="end_time" required></div>
+                </div>
+                <button type="submit" class="btn-submit-modal">Сгенерировать слоты</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="viewScheduleModal">
+        <div class="modal-content" style="width: 600px;">
+            <div class="modal-header">
+                <h3 id="viewModalSpecialistName">График работы</h3>
+                <button class="close-btn" onclick="closeModal('viewScheduleModal')">&times;</button>
+            </div>
+            <div id="viewModalBody"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="ticketActionModal">
+        <div class="modal-content" style="width: 480px; padding: 30px;">
+            <div class="modal-header" style="border-bottom: none; margin-bottom: 10px;">
+                <h3 style="font-size: 20px;">Обработка инцидента <span id="taTicketIdText" style="color: var(--text-muted);"></span></h3>
+                <button class="close-btn" onclick="closeModal('ticketActionModal')">&times;</button>
+            </div>
+            <div id="ticketStep1">
+                <div class="ticket-details">
+                    <h5 id="taTitle">Название проблемы</h5>
+                    <p id="taDesc" style="margin-bottom: 0;">Описание...</p>
+                </div>
+
+                <div class="client-info-card">
+                    <div class="client-info-row">
+                        <div class="client-info-label">Клиент</div>
+                        <div class="client-info-value" id="taClientFio"></div>
+                        <small id="taClient" style="color: var(--text-muted); margin-left: 5px; font-weight: normal;"></small>
+                    </div>
+                    <div class="client-info-row">
+                        <div class="client-info-label">Телефон</div>
+                        <div class="client-info-value" id="taPhone" style="color: var(--accent-blue);"></div>
+                    </div>
+                    <div class="client-info-row">
+                        <div class="client-info-label">Устройства</div>
+                        <div class="client-info-value" id="taDevice"></div>
+                    </div>
+                    <div class="client-info-row" style="margin-top: 5px;">
+                        <div class="client-info-label">Все S/N</div>
+                        <div class="client-info-value"><code id="taSn" style="color: var(--accent-orange); background: #fff5eb; padding: 2px 6px; border-radius: 6px;"></code></div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 25px;">
+                    <form method="POST" id="formPhoneResolve">
+                        {% csrf_token %}
+                        <input type="hidden" name="resolve_phone" value="1">
+                        <input type="hidden" name="ticket_id" id="formTicketId1_phone">
+                        <button type="submit" class="btn-phone-resolve">✅ Решено по телефону</button>
+                    </form>
+
+                    <form method="POST" id="formMasterResolve" style="display: none;">
+                        {% csrf_token %}
+                        <input type="hidden" name="resolve_master" value="1">
+                        <input type="hidden" name="ticket_id" id="formTicketId1_master">
+                        <button type="submit" class="btn-master-resolve">🛠 Мастер решил проблему</button>
+                    </form>
+
+                    <button type="button" id="btnMasterCall" class="btn-master-call" onclick="showMasterSelection()">👨‍🔧 Вызов мастера (Запись)</button>
+                </div>
+            </div>
+
+            <div id="ticketStep2" style="display: none;">
+                <button onclick="backToStep1()" style="background: none; border: none; color: var(--accent-blue); cursor: pointer; margin-bottom: 20px; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 5px;">← Назад к заявке</button>
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="assign_master" value="1">
+                    <input type="hidden" name="ticket_id" id="formTicketId2">
+                    <div class="form-group">
+                        <label>Выберите "окошко" специалиста:</label>
+                        <select name="slot_id" required style="width: 100%; height: 50px;">
+                            <option value="" disabled selected>-- Нажмите для выбора --</option>
+                            {% for sp in all_specialists %}
+                                {% regroup sp.slots.all|dictsort:"date" by date as date_list %}
+                                {% for date_group in date_list %}
+                                    <optgroup label="{{ sp.fio }} | {{ date_group.grouper|date:'d.m.Y' }}">
+                                        {% for slot in date_group.list|dictsort:"time" %}
+                                            {% if not slot.is_booked %}
+                                                <option value="{{ slot.id }}">{{ slot.time|time:"H:i" }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </optgroup>
+                                {% endfor %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-submit-modal" style="background: var(--accent-blue); box-shadow: 0 4px 15px rgba(0, 122, 255, 0.2);">Забронировать время</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // ДАННЫЕ ИЗ DJANGO (Для Линейного графика)
+            const labels = {{ chart_labels|safe }};
+            const autoData = {{ chart_auto_data|safe }};
+            const manualData = {{ chart_manual_data|safe }};
+
+            // 1. Линейный график трендов за 7 дней (Вместо старого графика)
+            const ctxTime = document.getElementById('timeChart').getContext('2d');
+            new Chart(ctxTime, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Авто-Тревоги',
+                            data: autoData,
+                            borderColor: '#ff6b00',
+                            backgroundColor: 'rgba(255, 107, 0, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4, // Плавные изгибы
+                            fill: true,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#ff6b00'
+                        },
+                        {
+                            label: 'Заявки клиентов',
+                            data: manualData,
+                            borderColor: '#007aff',
+                            backgroundColor: 'rgba(0, 122, 255, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#007aff'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { position: 'bottom' }
+                    }, 
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { precision: 0, stepSize: 1 },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // 2. График: Статусы (Остался нетронутым)
+            const ctxStatus = document.getElementById('statusChart').getContext('2d');
+            new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Критическая', 'В работе', 'Решено'],
+                    datasets: [{
+                        data: [
+                            {{ active_tickets }}, 
+                            {{ tickets_in_progress }}, 
+                            {{ tickets_resolved }}
+                        ],
+                        backgroundColor: ['#ff3b30', '#ffcc00', '#34c759'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // Добавлено для консистентности поведения
+                    cutout: '65%',
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        });
+
+        // --- ФИЛЬТРЫ И UI ---
+        function filterTable() {
+            let input = document.getElementById("searchInput");
+            let filter = input.value.toLowerCase();
+            let table = document.getElementById("usersTable");
+            let tr = table.getElementsByTagName("tr");
+            for (let i = 1; i < tr.length; i++) {
+                let rowText = tr[i].textContent || tr[i].innerText;
+                if (rowText.toLowerCase().indexOf(filter) > -1) { tr[i].style.display = ""; } else { tr[i].style.display = "none"; }
+            }
+        }
+
+        function filterGenericTickets(tableId, searchId, filterStatusId) {
+            let input = document.getElementById(searchId).value.toLowerCase();
+            let statusFilter = document.getElementById(filterStatusId).value;
+            let table = document.getElementById(tableId);
+            let tr = table.getElementsByTagName("tr");
+            for (let i = 1; i < tr.length; i++) {
+                let rowText = tr[i].innerText.toLowerCase();
+                let rowStatus = tr[i].getAttribute("data-status");
+
+                let matchesSearch = rowText.includes(input);
+                let matchesStatus = (statusFilter === "all") || (rowStatus === statusFilter);
+                if (matchesSearch && matchesStatus) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+
+        setTimeout(function() {
+            let alerts = document.querySelectorAll('.alert, .alert-success, .alert-error');
+            alerts.forEach(function(alert) {
+                alert.style.transition = "opacity 0.5s ease";
+                alert.style.opacity = "0";
+                setTimeout(() => alert.remove(), 500);
+            });
+        }, 5000);
+
+        function toggleNotifications(event) {
+            let dropdown = document.getElementById("notifDropdown");
+            dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
+        }
+
+        function openScheduleModal(id, name) {
+            document.getElementById('modalSpecialistId').value = id;
+            document.getElementById('modalSpecialistName').innerText = 'Смена: ' + name;
+            document.getElementById('scheduleModal').style.display = 'flex';
+        }
+
+        function openViewModal(id, name) {
+            document.getElementById('viewModalSpecialistName').innerText = 'График: ' + name;
+            let hiddenData = document.getElementById('schedule-data-' + id).innerHTML;
+            document.getElementById('viewModalBody').innerHTML = hiddenData;
+            document.getElementById('viewScheduleModal').style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            let notifDropdown = document.getElementById("notifDropdown");
+            if (!event.target.closest('.notification-wrapper') && notifDropdown) {
+                notifDropdown.style.display = "none";
+            }
+            if (event.target.classList.contains('modal-overlay')) {
+                event.target.style.display = "none";
+            }
+        }
+
+        function openTicketActionModal(btn) {
+            let id = btn.getAttribute('data-id');
+            let client = btn.getAttribute('data-client');
+            let fio = btn.getAttribute('data-fio');
+            let phone = btn.getAttribute('data-phone');
+            let device = btn.getAttribute('data-device');
+            let sn = btn.getAttribute('data-sn');
+            let title = btn.getAttribute('data-title');
+            let desc = btn.getAttribute('data-desc');
+            let hasAppt = btn.getAttribute('data-has-appt');
+
+            document.getElementById('taTicketIdText').innerText = '#' + id;
+            document.getElementById('taTitle').innerText = title;
+            document.getElementById('taDesc').innerText = desc;
+
+            document.getElementById('taClient').innerText = '(@' + client + ')';
+            document.getElementById('taClientFio').innerText = fio;
+            document.getElementById('taPhone').innerText = phone;
+            document.getElementById('taDevice').innerText = device;
+            document.getElementById('taSn').innerText = sn;
+
+            document.getElementById('formTicketId1_phone').value = id;
+            document.getElementById('formTicketId1_master').value = id;
+            document.getElementById('formTicketId2').value = id;
+
+            let masterBtn = document.getElementById('btnMasterCall');
+            let formPhone = document.getElementById('formPhoneResolve');
+            let formMaster = document.getElementById('formMasterResolve');
+
+            if (hasAppt === 'yes') {
+                masterBtn.innerHTML = '🔄 Перенести запись';
+                masterBtn.style.background = '#8e44ad';
+                masterBtn.style.boxShadow = '0 4px 15px rgba(142, 68, 173, 0.2)';
+                formPhone.style.display = 'none';
+                formMaster.style.display = 'block';
+            } else {
+                masterBtn.innerHTML = '👨‍🔧 Вызов мастера (Запись)';
+                masterBtn.style.background = 'var(--accent-blue)';
+                masterBtn.style.boxShadow = '0 4px 15px rgba(0, 122, 255, 0.2)';
+                formPhone.style.display = 'block';
+                formMaster.style.display = 'none';
+            }
+
+            backToStep1();
+            document.getElementById('ticketActionModal').style.display = 'flex';
+        }
+
+        function showMasterSelection() {
+            document.getElementById('ticketStep1').style.display = 'none';
+            document.getElementById('ticketStep2').style.display = 'block';
+        }
+
+        function backToStep1() {
+            document.getElementById('ticketStep1').style.display = 'block';
+            document.getElementById('ticketStep2').style.display = 'none';
+        }
+
+        const spPhoneInput = document.getElementById('specialist-phone');
+        if (spPhoneInput) {
+            spPhoneInput.addEventListener('input', function (e) {
+                let inputNumbersValue = e.target.value.replace(/\D/g, '');
+                let formattedInputValue = '';
+                if (!inputNumbersValue) { return e.target.value = ''; }
+                if (['7', '8', '9'].indexOf(inputNumbersValue[0]) > -1) {
+                    if (inputNumbersValue[0] === '9') { inputNumbersValue = '7' + inputNumbersValue; }
+                    let firstSymbols = '+7';
+                    formattedInputValue = firstSymbols + ' ';
+                    if (inputNumbersValue.length > 1) { formattedInputValue += '(' + inputNumbersValue.substring(1, 4); }
+                    if (inputNumbersValue.length >= 5) { formattedInputValue += ') ' + inputNumbersValue.substring(4, 7); }
+                    if (inputNumbersValue.length >= 8) { formattedInputValue += '-' + inputNumbersValue.substring(7, 9); }
+                    if (inputNumbersValue.length >= 10) { formattedInputValue += '-' + inputNumbersValue.substring(9, 11); }
+                } else {
+                    formattedInputValue = '+' + inputNumbersValue.substring(0, 15);
+                }
+                e.target.value = formattedInputValue;
+            });
+            spPhoneInput.addEventListener('keydown', function(e) {
+                if (e.keyCode === 8 && e.target.value.replace(/\D/g, '').length === 1) { e.target.value = ''; }
+            });
+        }
+
+        // --- МАГИЯ ТЕЛЕМЕТРИИ ---
+        function triggerTelemetry() {
+            fetch("{% url 'simulate_telemetry' %}")
+            .then(res => res.json())
+            .then(data => {
+                let logBox = document.getElementById('logConsole');
+                
+                if (logBox.innerHTML.includes('Ожидание связи...')) { logBox.innerHTML = ''; }
+                if (data.logs && data.logs.length > 0) {
+                    data.logs.forEach(log => {
+                        let logEntry = document.createElement('div');
+                        logEntry.style.marginBottom = '4px';
+                        if (log.includes('🔴')) {
+                            logEntry.innerHTML = `<span style="color: #ff3b30;">${log}</span>`;
+                        } else {
+                            logEntry.innerHTML = `<span style="color: #34c759;">${log}</span>`;
+                        }
+                        logBox.prepend(logEntry);
+                    });
+                }
+            })
+            .catch(err => console.error('Ошибка телеметрии:', err));
+        }
+
+        // Авто-опрос датчиков
+        setInterval(triggerTelemetry, 10000);
+
+        // --- МАГИЯ REAL-TIME ОБНОВЛЕНИЯ ДАШБОРДА (БЕЗ ПЕРЕЗАГРУЗКИ) ---
+        setInterval(function() {
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    let parser = new DOMParser();
+                    let doc = parser.parseFromString(html, 'text/html');
+
+                    // 1. Обновляем статистику (числа)
+                    let newStats = doc.getElementById('dynamicStatsGrid');
+                    if (newStats) document.getElementById('dynamicStatsGrid').innerHTML = newStats.innerHTML;
+
+                    // 2. Обновляем таблицы заявок (только тело, чтобы не сломать поиск)
+                    let newManual = doc.getElementById('tableManualBody');
+                    if (newManual) document.getElementById('tableManualBody').innerHTML = newManual.innerHTML;
+
+                    let newAuto = doc.getElementById('tableAutoBody');
+                    if (newAuto) document.getElementById('tableAutoBody').innerHTML = newAuto.innerHTML;
+
+                    // 3. Обновляем колокольчик
+                    let newBell = doc.getElementById('notifWrapper');
+                    let oldBell = document.getElementById('notifWrapper');
+                    if (newBell && oldBell) {
+                        let dropdownWasOpen = document.getElementById("notifDropdown").style.display === "block";
+                        oldBell.innerHTML = newBell.innerHTML;
+                        if(dropdownWasOpen) {
+                            document.getElementById("notifDropdown").style.display = "block";
+                        }
+                    }
+                })
+                .catch(err => console.error("Ошибка синхронизации UI:", err));
+        }, 5000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,355 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход и Регистрация | ZONT Мониторинг</title>
+    <style>
+        /* --- ЦВЕТОВАЯ ПАЛИТРА ZONT --- */
+        :root {
+            --bg-main: #f2f5f9;
+            --bg-card: #ffffff;
+            --text-main: #1d1d1f;
+            --text-muted: #8e8e93;
+            --accent-blue: #007aff;
+            --accent-orange: #ff6b00;
+            --danger-red: #ff3b30;
+            --success-green: #34c759;
+            --radius-lg: 28px;
+            --radius-sm: 12px;
+            --shadow-card: 0 20px 60px rgba(0,0,0,0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .auth-container {
+            background-color: var(--bg-card);
+            width: 100%;
+            max-width: 460px;
+            padding: 45px 40px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .auth-container h2 {
+            text-align: center;
+            color: var(--text-main);
+            margin-bottom: 30px;
+            font-size: 26px;
+            font-weight: 700;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Декоративная точка ZONT около заголовка */
+        .auth-container h2::before {
+            content: '';
+            display: block;
+            width: 12px;
+            height: 12px;
+            background: var(--accent-orange);
+            border-radius: 50%;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Поля ввода в стиле iOS/ZONT */
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid transparent;
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-main);
+            background-color: #f4f5f8;
+            transition: 0.2s ease;
+            outline: none;
+        }
+        .input-group input::placeholder {
+            color: #b0b0b5;
+            font-weight: 400;
+        }
+        .input-group input:focus,
+        .input-group select:focus {
+            background-color: #ffffff;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+        }
+
+        .row {
+            display: flex;
+            gap: 15px;
+        }
+        .row .input-group {
+            flex: 1;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--accent-blue);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s ease;
+            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(0, 122, 255, 0.2);
+        }
+        .btn:hover {
+            background-color: #0062cc;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 122, 255, 0.3);
+        }
+
+        .toggle-text {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .toggle-text span {
+            color: var(--accent-blue);
+            cursor: pointer;
+            font-weight: 700;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+        .toggle-text span:hover {
+            color: #0062cc;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Обновленные стили для сообщений об ошибках */
+        .error-message {
+            background: #ffe8e6;
+            color: #d62419;
+            border: 1px solid rgba(255,59,48,0.2);
+            padding: 14px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        }
+        .success-message {
+            background: #e5f9eb;
+            color: #1e873d;
+            border: 1px solid rgba(52,199,89,0.2);
+            padding: 14px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+
+        <!-- Вывод ошибок (теперь виден на обеих вкладках) -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="{% if message.tags == 'error' %}error-message{% else %}success-message{% endif %} fade-in">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- ФОРМА ВХОДА -->
+        <div id="login-form" class="fade-in" style="display: {% if register_data %}none{% else %}block{% endif %};">
+            <h2>Вход в систему</h2>
+
+            <form action="" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="login">
+                <div class="input-group">
+                    <label for="login-username">Логин</label>
+                    <input type="text" id="login-username" name="login_username" placeholder="Укажите логин" required>
+                </div>
+                <div class="input-group">
+                    <label for="login-password">Пароль</label>
+                    <input type="password" id="login-password" name="login_password" placeholder="Укажите пароль" required>
+                </div>
+                <button type="submit" class="btn">Войти</button>
+            </form>
+            <div class="toggle-text">
+                Нет аккаунта? <span onclick="toggleForms()">Зарегистрироваться</span>
+            </div>
+        </div>
+
+        <!-- ФОРМА РЕГИСТРАЦИИ -->
+        <div id="register-form" class="fade-in" style="display: {% if register_data %}block{% else %}none{% endif %};">
+            <h2 style="font-size: 24px;">Регистрация</h2>
+
+            <form action="" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="register">
+
+                <div class="input-group">
+                    <label for="reg-fullname">ФИО</label>
+                    <input type="text" id="reg-fullname" name="fio" placeholder="Иванов Иван Иванович" value="{{ register_data.fio|default:'' }}" required>
+                </div>
+
+                <div class="row">
+                    <div class="input-group">
+                        <label for="reg-username">Логин</label>
+                        <input type="text" id="reg-username" name="username" placeholder="Придумайте логин" value="{{ register_data.username|default:'' }}" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="reg-phone">Телефон</label>
+                        <input type="tel" id="reg-phone" name="phone" placeholder="+7 (___) ___-__-__" value="{{ register_data.phone|default:'' }}" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-group">
+                        <label for="reg-device-type">Оборудование</label>
+                        <select id="reg-device-type" name="device_type" required>
+                            <option value="" disabled {% if not register_data.device_type %}selected{% endif %}>Выберите тип...</option>
+                            <option value="thermostat" {% if register_data.device_type == 'thermostat' %}selected{% endif %}>GSM-термостат</option>
+                            <option value="controller" {% if register_data.device_type == 'controller' %}selected{% endif %}>Контроллер</option>
+                            <option value="tracker" {% if register_data.device_type == 'tracker' %}selected{% endif %}>Авто-трекер</option>
+                            <option value="security" {% if register_data.device_type == 'security' %}selected{% endif %}>Охрана</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="reg-device-serial">Серийный номер </label>
+                        <!-- Заметь: здесь value пустой, чтобы при ошибке номер нужно было ввести заново -->
+                        <input type="text" id="reg-device-serial" name="serial_number" placeholder="Напр: ZN-123" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="reg-password">Пароль</label>
+                    <input type="password" id="reg-password" name="password" placeholder="Придумайте надежный пароль" required>
+                </div>
+
+                <button type="submit" class="btn">Создать аккаунт</button>
+            </form>
+            <div class="toggle-text">
+                Уже есть аккаунт? <span onclick="toggleForms()">Войти</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+
+        setTimeout(function() {
+            let alerts = document.querySelectorAll('.error-message, .success-message');
+            alerts.forEach(function(alert) {
+                alert.style.transition = "opacity 0.5s ease";
+                alert.style.opacity = "0";
+                setTimeout(() => alert.remove(), 500);
+            });
+        }, 5000);
+
+        // Функция переключения между формами
+        function toggleForms() {
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+
+            if (loginForm.style.display !== 'none') {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+            } else {
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+            }
+        }
+
+        // Автоматическое форматирование номера телефона
+        const phoneInput = document.getElementById('reg-phone');
+
+        phoneInput.addEventListener('input', function (e) {
+            let inputNumbersValue = e.target.value.replace(/\D/g, '');
+            let formattedInputValue = '';
+
+            if (!inputNumbersValue) {
+                return e.target.value = '';
+            }
+
+            if (['7', '8', '9'].indexOf(inputNumbersValue[0]) > -1) {
+                if (inputNumbersValue[0] === '9') {
+                    inputNumbersValue = '7' + inputNumbersValue;
+                }
+                let firstSymbols = '+7';
+                formattedInputValue = firstSymbols + ' ';
+
+                if (inputNumbersValue.length > 1) {
+                    formattedInputValue += '(' + inputNumbersValue.substring(1, 4);
+                }
+                if (inputNumbersValue.length >= 5) {
+                    formattedInputValue += ') ' + inputNumbersValue.substring(4, 7);
+                }
+                if (inputNumbersValue.length >= 8) {
+                    formattedInputValue += '-' + inputNumbersValue.substring(7, 9);
+                }
+                if (inputNumbersValue.length >= 10) {
+                    formattedInputValue += '-' + inputNumbersValue.substring(9, 11);
+                }
+            } else {
+                formattedInputValue = '+' + inputNumbersValue.substring(0, 15);
+            }
+
+            e.target.value = formattedInputValue;
+        });
+
+        phoneInput.addEventListener('keydown', function(e) {
+            if (e.keyCode === 8 && e.target.value.replace(/\D/g, '').length === 1) {
+                e.target.value = '';
+            }
+        });
+    </script>
+
+</body>
+</html>

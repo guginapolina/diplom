@@ -1,0 +1,205 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Карточка клиента | ZONT Управление</title>
+    <style>
+        /* --- ЦВЕТОВАЯ ПАЛИТРА ZONT --- */
+        :root {
+            --bg-main: #f2f5f9;
+            --bg-card: #ffffff;
+            --sidebar-bg: #1c1c1e;
+            --sidebar-hover: #2c2c2e;
+            --text-main: #1d1d1f;
+            --text-muted: #8e8e93;
+            --accent-blue: #007aff;
+            --accent-orange: #ff6b00;
+            --danger-red: #ff3b30;
+            --success-green: #34c759;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 10px;
+            --shadow-card: 0 8px 30px rgba(0,0,0,0.04);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { background: var(--bg-main); color: var(--text-main); display: flex; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+        /* --- БОКОВОЕ МЕНЮ --- */
+        .sidebar { width: 260px; background: var(--sidebar-bg); color: white; padding: 25px 20px; box-shadow: 4px 0 20px rgba(0,0,0,0.05); z-index: 10; }
+        .sidebar h2 { font-size: 20px; margin-bottom: 35px; color: var(--bg-card); font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .sidebar h2::before { content: ''; display: block; width: 12px; height: 12px; background: var(--accent-orange); border-radius: 50%; }
+
+        .sidebar nav a { display: block; color: #a1a1a6; text-decoration: none; padding: 14px 18px; margin-bottom: 8px; border-radius: var(--radius-sm); font-size: 15px; font-weight: 500; transition: 0.2s ease; }
+        .sidebar nav a:hover { background: var(--sidebar-hover); color: white; transform: translateX(4px); }
+
+        /* --- ОСНОВНОЙ КОНТЕНТ --- */
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        .header h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; display: flex; align-items: center; gap: 12px;}
+
+        .btn-back { background: #f4f5f8; color: var(--accent-blue); padding: 10px 20px; border-radius: 20px; text-decoration: none; font-size: 14px; font-weight: 700; transition: 0.2s; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-back:hover { background: #e5e5ea; transform: translateX(-2px); }
+
+        .alert-success { background: #e5f9eb; color: #1e873d; border: 1px solid rgba(52,199,89,0.2); padding: 16px 20px; border-radius: var(--radius-sm); margin-bottom: 25px; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+
+        /* --- КАРТОЧКИ --- */
+        .card { background: var(--bg-card); padding: 35px; border-radius: var(--radius-lg); box-shadow: var(--shadow-card); margin-bottom: 35px; border: 1px solid rgba(0,0,0,0.02); }
+        .card h2 { font-size: 20px; color: var(--text-main); font-weight: 700; margin-bottom: 25px; }
+
+        /* Информационные блоки клиента */
+        .client-info { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .info-block { background: #f9fafb; padding: 20px; border-radius: var(--radius-md); border: 1px solid #f0f0f0; display: flex; flex-direction: column; gap: 6px; }
+        .info-block span { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+        .info-block .value { font-size: 16px; color: var(--text-main); font-weight: 600; }
+
+        .status-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+        .status-active { background: #e5f9eb; color: #1e873d; }
+        .status-blocked { background: #ffe8e6; color: #d62419; }
+
+        code.sn-code { background: #fff5eb; color: var(--accent-orange); padding: 4px 8px; border-radius: 6px; font-family: monospace; font-size: 15px; }
+
+        /* --- ТАБЛИЦА ИНЦИДЕНТОВ --- */
+        table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        th { text-align: left; padding: 15px; color: var(--text-muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #f4f5f8; }
+        td { padding: 20px 15px; border-bottom: 1px solid #f4f5f8; font-size: 15px; color: var(--text-main); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #fcfcfd; }
+
+        /* --- ФОРМА ИЗМЕНЕНИЯ СТАТУСА --- */
+        .status-form { display: flex; align-items: center; gap: 10px; }
+        .status-form select {
+            padding: 10px 14px;
+            border: 2px solid transparent;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            background: #f4f5f8;
+            color: var(--text-main);
+            outline: none;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .status-form select:focus { background: white; border-color: var(--accent-blue); box-shadow: 0 0 0 4px rgba(0,122,255,0.1); }
+
+        .btn-save {
+            background: var(--success-green);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(52, 199, 89, 0.2);
+        }
+        .btn-save:hover { background: #2ebd4f; transform: translateY(-1px); }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>ZONT Управление</h2>
+        <nav>
+            <a href="{% url 'admin_dashboard' %}">← В панель диспетчера</a>
+            <a href="{% url 'logout' %}" style="margin-top: 50px; color: #ff3b30; font-weight: bold; background: rgba(255,59,48,0.1);">Выйти из системы</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Карточка клиента: <span style="color: var(--accent-blue);">{{ client.fio }}</span></h1>
+            <a href="{% url 'admin_dashboard' %}" class="btn-back">← Назад к базе</a>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-success">✓ {{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="card">
+            <h2>Информация и контакты</h2>
+            <div class="client-info">
+                <div class="info-block">
+                    <span>Логин в системе</span>
+                    <div class="value">{{ client.user.username }}</div>
+                </div>
+                <div class="info-block">
+                    <span>Телефон</span>
+                    <div class="value">{{ client.phone }}</div>
+                </div>
+                <div class="info-block">
+                    <span>Статус аккаунта</span>
+                    <div class="value">
+                        {% if client.is_approved %}
+                            <span class="status-badge status-active">Активен</span>
+                        {% else %}
+                            <span class="status-badge status-blocked">Заблокирован</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="info-block">
+                    <span>Тип устройства</span>
+                    <div class="value">{{ client.get_device_type_display }}</div>
+                </div>
+                <div class="info-block">
+                    <span>Серийный номер </span>
+                    <div class="value"><code class="sn-code">{{ client.serial_number }}</code></div>
+                </div>
+                <div class="info-block">
+                    <span>Дата регистрации</span>
+                    <div class="value">{{ client.user.date_joined|date:"d.m.Y" }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Журнал инцидентов пользователя</h2>
+            {% if tickets %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID / Время</th>
+                        <th>Суть проблемы</th>
+                        <th>Подробное описание</th>
+                        <th>Управление статусом</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ticket in tickets %}
+                    <tr>
+                        <td>
+                            <strong style="color: var(--text-muted);">#{{ ticket.id }}</strong><br>
+                            <small style="font-weight: 500; color: var(--text-main);">{{ ticket.created_at|date:"d.m.Y H:i" }}</small>
+                        </td>
+                        <td><strong style="color: var(--danger-red); font-size: 15px;">{{ ticket.title }}</strong></td>
+                        <td style="max-width: 350px; line-height: 1.5; color: var(--text-muted);">{{ ticket.description }}</td>
+                        <td>
+                            <form method="POST" class="status-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+                                <select name="new_status">
+                                    <option value="new" {% if ticket.status == 'new' %}selected{% endif %}>🔴 Критическая</option>
+                                    <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>🟡 В работе</option>
+                                    <option value="resolved" {% if ticket.status == 'resolved' %}selected{% endif %}>🟢 Решено</option>
+                                </select>
+                                <button type="submit" class="btn-save">Сохранить</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="background: #f4f5f8; padding: 30px; border-radius: var(--radius-md); text-align: center; margin-top: 10px;">
+                <p style="color: var(--text-muted); font-size: 15px; font-weight: 500;">У этого клиента еще не было зафиксировано поломок или инцидентов.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>

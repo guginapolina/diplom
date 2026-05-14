@@ -1,0 +1,361 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет | ZONT Мониторинг</title>
+    <style>
+        :root {
+            --bg-main: #f2f5f9;
+            --bg-card: #ffffff;
+            --sidebar-bg: #1c1c1e;
+            --text-main: #1d1d1f;
+            --text-muted: #8e8e93;
+            --accent-blue: #007aff;
+            --accent-orange: #ff6b00;
+            --danger-red: #ff3b30;
+            --success-green: #34c759;
+            --radius-lg: 28px;
+            --radius-md: 16px;
+            --radius-sm: 12px;
+            --shadow-card: 0 10px 40px rgba(0,0,0,0.05);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { background: var(--bg-main); color: var(--text-main); -webkit-font-smoothing: antialiased; }
+
+        .navbar { background-color: var(--sidebar-bg); color: white; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .navbar h1 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 12px; }
+        .navbar h1::before { content: ''; display: block; width: 10px; height: 10px; background: var(--accent-orange); border-radius: 50%; }
+        .logout-btn { color: white; text-decoration: none; font-weight: 600; font-size: 13px; padding: 8px 18px; background: rgba(255,255,255,0.1); border-radius: 20px; transition: 0.2s; }
+        .logout-btn:hover { background: var(--danger-red); }
+
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+
+        .user-profile-header { grid-column: span 2; background: var(--bg-card); padding: 25px 35px; border-radius: var(--radius-lg); box-shadow: var(--shadow-card); display: flex; align-items: center; gap: 25px; border: 1px solid rgba(0,0,0,0.02); margin-bottom: 10px; }
+        .user-avatar { width: 65px; height: 65px; background: var(--accent-blue); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 28px; font-weight: 700; box-shadow: 0 5px 15px rgba(0,122,255,0.2); }
+        .user-details h2 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+        .user-details p { color: var(--text-muted); font-size: 15px; font-weight: 500; }
+        .user-details b { color: var(--accent-blue); }
+
+        .card { background: var(--bg-card); padding: 35px; border-radius: var(--radius-lg); box-shadow: var(--shadow-card); border: 1px solid rgba(0,0,0,0.02); align-self: start; }
+        .card h2 { margin-bottom: 25px; color: var(--text-main); font-size: 18px; font-weight: 700; }
+
+        .device-info-list { display: flex; flex-direction: column; }
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #e5f9eb; color: #1e873d; border-radius: 20px; font-size: 13px; font-weight: 700; }
+        .status-badge::before { content: ''; width: 8px; height: 8px; background: #34c759; border-radius: 50%; display: block; }
+        code.sn-code { background: #fff5eb; color: var(--accent-orange); padding: 4px 10px; border-radius: 8px; font-family: monospace; font-size: 14px; display: inline-block;}
+
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;}
+        .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 15px 18px; border: 2px solid transparent; border-radius: var(--radius-sm); font-size: 15px; font-weight: 500; background: #f4f5f8; color: var(--text-main); outline: none; transition: 0.2s; }
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus { background: white; border-color: var(--accent-blue); box-shadow: 0 0 0 4px rgba(0,122,255,0.1); }
+        .input-group textarea { resize: vertical; min-height: 120px; }
+
+        .btn-submit { width: 100%; padding: 16px; background: var(--accent-blue); color: white; border: none; border-radius: var(--radius-sm); font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(0, 122, 255, 0.2); }
+        .btn-submit:hover { background: #0062cc; transform: translateY(-1px); }
+
+        /* Новое поле для одной температуры */
+        .limit-inputs { display: flex; gap: 15px; align-items: center; margin-top: 10px; background: #ffffff; padding: 12px 15px; border-radius: 8px; border: 1px dashed #d1d1d6; justify-content: space-between;}
+        .limit-inputs input { width: 90px; padding: 8px; border: 2px solid var(--accent-blue); border-radius: 6px; text-align: center; font-weight: bold; font-size: 16px;}
+
+        .alert-box { padding: 15px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        .alert-success { background: #e5f9eb; color: #1e873d; border: 1px solid rgba(52,199,89,0.2); }
+        .alert-error { background: #ffe8e6; color: #d62419; border: 1px solid rgba(255,59,48,0.2); }
+
+        .history-card { grid-column: span 2; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 10px; }
+        th { text-align: left; padding: 15px; color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #f4f5f8; }
+        td { padding: 20px 15px; border-bottom: 1px solid #f4f5f8; font-size: 15px; vertical-align: top; color: var(--text-main); }
+        tr:last-child td { border-bottom: none; }
+
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; display: inline-block; }
+        .status-new { background: #ffe8e6; color: #d62419; }
+        .status-in_progress { background: #fff5cc; color: #b28f00; }
+        .status-resolved { background: #f2f2f7; color: #8e8e93; }
+        .master-badge { margin-top: 12px; font-size: 14px; color: #6b21a8; background: #f4ecfb; padding: 15px 18px; border-radius: var(--radius-md); border: 1px solid rgba(107,33,168,0.1); line-height: 1.5; display: inline-block; }
+
+        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } .history-card, .user-profile-header { grid-column: span 1; } .user-profile-header { flex-direction: column; text-align: center; } }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <h1>ZONT Клиент</h1>
+        <a href="{% url 'logout' %}" class="logout-btn">Выход</a>
+    </div>
+
+    <div class="section-card" style="background: #1c1c1e; border: none; padding: 25px; border-radius: 16px; margin-bottom: 30px;">
+        <div class="section-header" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 15px; display: flex; justify-content: space-between;">
+            <h2 style="color: #ffffff; font-size: 16px; margin: 0; display: flex; align-items: center; gap: 10px;">
+                <span style="display: inline-block; width: 10px; height: 10px; background: #34c759; border-radius: 50%; box-shadow: 0 0 8px #34c759; animation: pulseDot 2s infinite;"></span>
+                Личная телеметрия оборудования
+            </h2>
+            <button onclick="document.getElementById('userLogConsole').innerHTML=''" style="background: transparent; border: 1px solid #444; color: #888; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 12px;">Очистить</button>
+        </div>
+        <div id="userLogConsole" style="height: 180px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.6; color: #a1a1a6; padding-right: 10px;">
+            <div style="color: #555;">[СИСТЕМА] Подключение к датчикам ZONT... (Опрос каждые 10 секунд)</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="user-profile-header">
+            <div class="user-avatar">{{ profile.fio|slice:":1" }}</div>
+            <div class="user-details">
+                <p>Добро пожаловать,</p>
+                <h2>{{ profile.fio }}</h2>
+                <p>Привязанный телефон: <b>{{ profile.phone }}</b></p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Ваше оборудование <span style="font-size: 13px; font-weight: normal; color: var(--text-muted); float: right;">Online 🟢</span></h2>
+
+            <div id="dynamicDevicesContainer">
+                <div class="device-info-list">
+                    <!-- ОСНОВНОЕ УСТРОЙСТВО -->
+                    <div style="background: #f9fafb; padding: 18px; border-radius: 16px; margin-bottom: 12px; border: 1px solid #ebebeb;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <strong style="color: var(--text-main); font-size: 15px;">{{ profile.get_device_type_display }} <small style="color:var(--text-muted);">(Основное)</small></strong>
+                            <span class="status-badge">Активно</span>
+                        </div>
+                        <code class="sn-code">{{ profile.serial_number }}</code>
+
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                            <small style="color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Показатели:</small>
+                            <span id="metric-{{ profile.serial_number }}" class="live-metric" style="font-size: 18px; font-weight: 800; color: {% if profile.is_metric_critical %}#ff3b30{% else %}#34c759{% endif %}">
+                                {% if profile.last_metric %}
+                                    {% if profile.device_type == 'thermostat' %}🌡 {{ profile.last_metric }} °C{% else %}📡 {{ profile.last_metric }} ед.{% endif %}
+                                {% else %}
+                                    Ожидание...
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <!-- ФОРМА ЦЕЛЕВОЙ ТЕМПЕРАТУРЫ -->
+                        <form method="POST" class="limit-inputs">
+                            {% csrf_token %}
+                            <input type="hidden" name="update_limits" value="1">
+                            <input type="hidden" name="device_sn" value="{{ profile.serial_number }}">
+                            <div style="display: flex; flex-direction: column;">
+                                <small style="color: var(--text-main); font-weight: 700; font-size: 13px;">Целевая температура:</small>
+                                <small style="color: var(--text-muted); font-size: 11px;">Диапазон котла: 40 °C — 60 °C</small>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="number" step="0.1" name="target_temp" value="{{ profile.target_temp|default:50.0 }}" min="40.0" max="60.0" required>
+                                <button type="submit" class="btn-submit" style="padding: 8px 16px; font-size: 13px; width: auto; border-radius: 6px; box-shadow: none;">Задать</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- ДОПОЛНИТЕЛЬНЫЕ УСТРОЙСТВА -->
+                    {% for dev in request.user.additional_devices.all %}
+                    <div style="background: #f9fafb; padding: 18px; border-radius: 16px; margin-bottom: 12px; border: 1px solid #ebebeb;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <strong style="color: var(--text-main); font-size: 15px;">{{ dev.get_device_type_display }}</strong>
+                            <span class="status-badge">Активно</span>
+                        </div>
+                        <code class="sn-code">{{ dev.serial_number }}</code>
+
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                            <small style="color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Показатели:</small>
+                            <span id="metric-{{ dev.serial_number }}" class="live-metric" style="font-size: 18px; font-weight: 800; color: {% if dev.is_metric_critical %}#ff3b30{% else %}#34c759{% endif %}">
+                                {% if dev.last_metric %}
+                                    {% if dev.device_type == 'thermostat' %}🌡 {{ dev.last_metric }} °C{% else %}📡 {{ dev.last_metric }} ед.{% endif %}
+                                {% else %}
+                                    Ожидание...
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <!-- ФОРМА ЦЕЛЕВОЙ ТЕМПЕРАТУРЫ -->
+                        <form method="POST" class="limit-inputs">
+                            {% csrf_token %}
+                            <input type="hidden" name="update_limits" value="1">
+                            <input type="hidden" name="device_sn" value="{{ dev.serial_number }}">
+                            <div style="display: flex; flex-direction: column;">
+                                <small style="color: var(--text-main); font-weight: 700; font-size: 13px;">Целевая температура:</small>
+                                <small style="color: var(--text-muted); font-size: 11px;">Диапазон котла: 40 °C — 60 °C</small>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="number" step="0.1" name="target_temp" value="{{ dev.target_temp|default:50.0 }}" min="40.0" max="60.0" required>
+                                <button type="submit" class="btn-submit" style="padding: 8px 16px; font-size: 13px; width: auto; border-radius: 6px; box-shadow: none;">Задать</button>
+                            </div>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button id="btnShowForm" onclick="document.getElementById('addDeviceForm').style.display='block'; this.style.display='none';" style="width: 100%; padding: 14px; background: transparent; color: var(--accent-blue); border: 2px dashed #d1d1d6; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; margin-top: 10px; font-size: 14px;">+ Подключить ещё устройство</button>
+
+            <form id="addDeviceForm" method="POST" style="display: none; margin-top: 15px; background: #f4f5f8; padding: 20px; border-radius: 16px;">
+                {% csrf_token %}
+                <input type="hidden" name="add_client_device" value="1">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                    <h4 style="margin: 0;">Регистрация прибора</h4>
+                    <button type="button" onclick="document.getElementById('addDeviceForm').style.display='none'; document.getElementById('btnShowForm').style.display='block';" style="background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:20px;">&times;</button>
+                </div>
+
+                <div class="input-group">
+                    <label>Тип</label>
+                    <input type="hidden" name="new_type" value="thermostat">
+                    <input type="text" value="GSM-термостат" readonly style="color: var(--text-muted); cursor: not-allowed; opacity: 0.8; background-color: #e9ecef;">
+                </div>
+
+                <div class="input-group">
+                    <label>S/N</label>
+                    <input type="text" name="new_sn" required placeholder="Например: ZN-500">
+                </div>
+                <button type="submit" class="btn-submit">Зарегистрировать</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Техническая поддержка</h2>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert-box {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form action="" method="POST">
+                {% csrf_token %}
+                <div class="input-group">
+                    <label>Что случилось?</label>
+                    <input type="text" name="title" placeholder="Краткая тема" required>
+                </div>
+                <div class="input-group">
+                    <label>Описание проблемы</label>
+                    <textarea name="description" placeholder="Опишите детали..." required></textarea>
+                </div>
+                <button type="submit" class="btn-submit">Отправить заявку</button>
+            </form>
+        </div>
+
+        <div class="card history-card" id="dynamicHistoryContainer">
+            <h2>История ваших обращений</h2>
+            {% if tickets %}
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">№</th>
+                        <th style="width: 140px;">Дата</th>
+                        <th>Инцидент</th>
+                        <th style="width: 120px; text-align: right;">Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ticket in tickets %}
+                    <tr>
+                        <td><b>#{{ ticket.id }}</b></td>
+                        <td style="color: var(--text-muted); font-size: 13px;">{{ ticket.created_at|date:"d.m.Y H:i" }}</td>
+                        <td>
+                            <strong>{{ ticket.title }}</strong>
+                            {% if ticket.appointment and ticket.status != 'resolved' %}
+                            <div class="master-badge">
+                                <b>👨‍🔧 Выезд мастера назначен</b><br>
+                                Инженер: {{ ticket.appointment.specialist.fio }}<br>
+                                Время: <b>{{ ticket.appointment.date|date:"d.m" }} к {{ ticket.appointment.time|time:"H:i" }}</b>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">
+                            <span class="badge status-{{ ticket.status }}">{{ ticket.get_status_display }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p style="text-align:center; color:var(--text-muted); padding: 40px;">Активных заявок нет.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        setTimeout(function() {
+            let alerts = document.querySelectorAll('.alert-box');
+            alerts.forEach(function(alert) {
+                alert.style.transition = "opacity 0.5s ease";
+                alert.style.opacity = "0";
+                setTimeout(() => alert.remove(), 500);
+            });
+        }, 4000);
+
+        setInterval(function() {
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    let parser = new DOMParser();
+                    let doc = parser.parseFromString(html, 'text/html');
+
+                    document.querySelectorAll('.live-metric').forEach(el => {
+                        let id = el.id;
+                        let newEl = doc.getElementById(id);
+                        if (newEl) {
+                            el.innerHTML = newEl.innerHTML;
+                            el.style.color = newEl.style.color; 
+                        }
+                    });
+
+                    let newHistory = doc.getElementById('dynamicHistoryContainer');
+                    let currentHistory = document.getElementById('dynamicHistoryContainer');
+                    if (newHistory && currentHistory) {
+                        currentHistory.innerHTML = newHistory.innerHTML;
+                    }
+                })
+                .catch(err => console.error("Ошибка синхронизации:", err));
+        }, 5000);
+    </script>
+
+<script>
+    function triggerUserTelemetry() {
+        fetch("{% url 'user_simulate_telemetry' %}")
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) return;
+
+            let logBox = document.getElementById('userLogConsole');
+
+            if (logBox.innerHTML.includes('Подключение к датчикам ZONT...')) {
+                logBox.innerHTML = '';
+            }
+
+            if (data.logs && data.logs.length > 0) {
+                data.logs.forEach(log => {
+                    let logEntry = document.createElement('div');
+                    logEntry.style.marginBottom = '4px';
+
+                    if (log.includes('🔴') || log.includes('СБОЙ')) {
+                        logEntry.innerHTML = `<span style="color: #ff3b30; font-weight: bold;">${log}</span>`;
+                    } else if (log.includes('🟡')) {
+                        logEntry.innerHTML = `<span style="color: #ffcc00;">${log}</span>`;
+                    } else {
+                        logEntry.innerHTML = `<span style="color: #34c759;">${log}</span>`;
+                    }
+
+                    logBox.prepend(logEntry);
+                });
+            }
+
+            if(data.new_tickets > 0) {
+                let alertEntry = document.createElement('div');
+                alertEntry.innerHTML = `
+                    <div style="background: rgba(255, 59, 48, 0.2); border-left: 4px solid #ff3b30; padding: 10px; margin: 10px 0; border-radius: 4px;">
+                        <strong style="color: white;">🚨 Зафиксирована авария! Заявка в сервис автоматически создана.</strong>
+                        <br><button onclick="location.reload()" style="margin-top: 8px; background: #ff3b30; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Обновить страницу</button>
+                    </div>`;
+                logBox.prepend(alertEntry);
+            }
+        })
+        .catch(err => console.error('Ошибка телеметрии:', err));
+    }
+
+    setInterval(triggerUserTelemetry, 10000);
+</script>
+</body>
+</html>
